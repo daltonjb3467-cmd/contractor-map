@@ -1,0 +1,1763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contractor Prospect Map</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-primary: #1a1a2e;
+      --bg-secondary: #16213e;
+      --bg-card: #1f2b47;
+      --bg-input: #253352;
+      --text-primary: #e0e0e0;
+      --text-secondary: #a0aec0;
+      --accent: #4a90d9;
+      --accent-hover: #5ba0e9;
+      --green: #48bb78;
+      --yellow: #ecc94b;
+      --orange: #ed8936;
+      --red: #fc8181;
+      --purple: #b794f4;
+      --border: #2d3748;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header */
+    header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+    }
+    header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    header h1 span { color: var(--text-secondary); font-weight: 400; }
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .header-actions button {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.2s;
+    }
+    .header-actions button:hover { background: var(--accent); color: #fff; }
+
+    /* Region Toggle */
+    .region-toggle {
+      display: flex;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .region-toggle button {
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      background: transparent;
+      color: var(--text-secondary);
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .region-toggle button.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* Main Layout */
+    .main-layout { display: flex; flex: 1; overflow: hidden; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 380px;
+      min-width: 380px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .sidebar-tabs { display: flex; border-bottom: 1px solid var(--border); }
+    .sidebar-tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      background: transparent;
+      color: var(--text-secondary);
+      border: none;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .sidebar-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* Filters */
+    .filters {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .filters input, .filters select {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+    }
+    .filters input { flex: 1; min-width: 120px; }
+    .filters select { min-width: 120px; }
+    .filters input:focus, .filters select:focus { border-color: var(--accent); }
+
+    /* Contractor List */
+    .dealer-list { flex: 1; overflow-y: auto; padding: 8px; }
+    .dealer-list::-webkit-scrollbar { width: 6px; }
+    .dealer-list::-webkit-scrollbar-track { background: transparent; }
+    .dealer-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .dealer-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .dealer-card:hover { border-color: var(--accent); transform: translateX(2px); }
+    .dealer-card.selected { border-color: var(--accent); background: rgba(74,144,217,0.1); }
+    .dealer-card .dealer-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; padding-right: 80px; }
+    .dealer-card .dealer-address { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+    .dealer-card .dealer-phone { font-size: 12px; color: var(--text-secondary); }
+    .status-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .status-not_contacted { background: rgba(160,174,192,0.2); color: var(--text-secondary); }
+    .status-contacted { background: rgba(74,144,217,0.2); color: var(--accent); }
+    .status-follow_up { background: rgba(236,201,75,0.2); color: var(--yellow); }
+    .status-closed { background: rgba(72,187,120,0.2); color: var(--green); }
+    .status-not_interested { background: rgba(252,129,129,0.2); color: var(--red); }
+
+    .trade-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      background: rgba(183,148,244,0.2);
+      color: var(--purple);
+    }
+
+    /* Route Panel */
+    .route-panel { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+    .route-panel.active { display: flex; }
+    .dealer-panel { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+    .dealer-panel.active { display: flex; }
+
+    .route-header { padding: 14px; border-bottom: 1px solid var(--border); }
+    .route-header h3 { font-size: 14px; margin-bottom: 8px; }
+    .route-actions { display: flex; gap: 8px; }
+    .route-actions button {
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent) !important; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-secondary { background: var(--bg-card); color: var(--text-primary); }
+    .btn-secondary:hover { background: var(--bg-input); }
+    .btn-danger { background: rgba(252,129,129,0.15); color: var(--red); border-color: var(--red) !important; }
+    .btn-danger:hover { background: rgba(252,129,129,0.25); }
+
+    .route-stops { flex: 1; overflow-y: auto; padding: 8px; }
+    .route-stop {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 12px; margin-bottom: 4px;
+    }
+    .stop-number {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; flex-shrink: 0;
+    }
+    .stop-info { flex: 1; }
+    .stop-info .stop-name { font-size: 13px; font-weight: 600; }
+    .stop-info .stop-addr { font-size: 11px; color: var(--text-secondary); }
+    .stop-remove { background: none; border: none; color: var(--red); cursor: pointer; font-size: 16px; padding: 4px; }
+    .route-summary {
+      padding: 12px 14px; border-top: 1px solid var(--border);
+      font-size: 13px; color: var(--text-secondary); background: var(--bg-card);
+    }
+    .route-summary strong { color: var(--text-primary); }
+
+    /* Map */
+    .map-container { flex: 1; position: relative; }
+    #map { width: 100%; height: 100%; }
+
+    /* Stats bar */
+    .stats-bar {
+      display: flex; gap: 16px; padding: 8px 14px;
+      border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-secondary);
+      flex-wrap: wrap;
+    }
+    .stat-item strong { color: var(--text-primary); }
+
+    /* Modal */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      z-index: 1000; align-items: center; justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px; width: 440px;
+      max-width: 90vw; max-height: 80vh; overflow-y: auto;
+    }
+    .modal h2 { font-size: 18px; margin-bottom: 16px; }
+    .modal label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; margin-top: 12px; }
+    .modal input, .modal select, .modal textarea {
+      width: 100%; background: var(--bg-input); border: 1px solid var(--border);
+      color: var(--text-primary); padding: 8px 12px; border-radius: 6px;
+      font-size: 14px; outline: none; font-family: inherit;
+    }
+    .modal textarea { min-height: 80px; resize: vertical; }
+    .modal input:focus, .modal select:focus, .modal textarea:focus { border-color: var(--accent); }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+    .modal-actions button { padding: 8px 20px; border-radius: 6px; font-size: 14px; cursor: pointer; border: 1px solid var(--border); }
+
+    /* Loading */
+    .loading-overlay {
+      position: absolute; inset: 0; background: rgba(26,26,46,0.85);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50;
+    }
+    .loading-overlay.hidden { display: none; }
+    .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-overlay p { margin-top: 12px; color: var(--text-secondary); font-size: 14px; }
+
+    /* API key prompt */
+    .api-prompt {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 100%; padding: 40px; text-align: center;
+    }
+    .api-prompt h2 { margin-bottom: 12px; }
+    .api-prompt p { color: var(--text-secondary); margin-bottom: 20px; max-width: 400px; }
+    .api-prompt input {
+      background: var(--bg-input); border: 1px solid var(--border); color: var(--text-primary);
+      padding: 10px 16px; border-radius: 8px; font-size: 14px; width: 350px; outline: none; margin-bottom: 12px;
+    }
+    .api-prompt input:focus { border-color: var(--accent); }
+    .api-prompt button { background: var(--accent); color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+
+    .gm-style-iw { background: var(--bg-card) !important; }
+    .route-checkbox { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center; color: var(--text-secondary); }
+    .empty-state svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.4; }
+    .empty-state p { font-size: 13px; }
+    .drag-handle { cursor: grab; color: var(--text-secondary); font-size: 14px; padding: 0 4px; user-select: none; }
+    .drag-handle:active { cursor: grabbing; }
+    .open-maps-btn { display: inline-block; margin-top: 8px; padding: 6px 14px; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; text-decoration: none; }
+
+    /* Toast notifications */
+    .toast-container { position: fixed; top: 16px; right: 16px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+    .toast {
+      background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--green);
+      border-radius: 8px; padding: 10px 16px; font-size: 13px; color: var(--text-primary);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: toastIn 0.3s ease, toastOut 0.3s ease 3s forwards; max-width: 340px;
+    }
+    .toast.error { border-left-color: var(--red); }
+    .toast.info { border-left-color: var(--accent); }
+    @keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+    /* Stage mapping rows */
+    .stage-map-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    .stage-map-row .status-label { width: 120px; font-weight: 600; }
+    .stage-map-row select { flex: 1; background: var(--bg-input); border: 1px solid var(--border); color: var(--text-primary); padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <header>
+    <div class="header-left">
+      <h1>Contractor Map <span>| Sales Route Planner</span></h1>
+      <div class="region-toggle" id="region-toggle">
+        <button class="active" data-region="all" onclick="setRegion('all')">All</button>
+        <button data-region="nj" onclick="setRegion('nj')">NJ</button>
+        <button data-region="fl" onclick="setRegion('fl')">FL</button>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button onclick="addContractorManual()">+ Add</button>
+      <button onclick="rescanContractors()" id="rescan-btn" style="background:var(--green);color:#fff;border-color:var(--green);">Re-scan</button>
+      <button onclick="fetchMissingWebsites()" id="fetch-web-btn" style="background:var(--orange);color:#fff;border-color:var(--orange);">Fetch Websites</button>
+      <button onclick="exportCSV()" style="background:var(--purple);color:#fff;border-color:var(--purple);">Export CSV</button>
+      <button onclick="openGHLSettings()" style="background:#FF6B35;color:#fff;border-color:#FF6B35;">GHL Sync</button>
+      <button onclick="exportData()">Export</button>
+      <button onclick="importData()">Import</button>
+      <button onclick="changeApiKey()">API Key</button>
+    </div>
+  </header>
+
+  <div class="main-layout">
+    <div class="sidebar">
+      <div class="sidebar-tabs">
+        <button class="sidebar-tab active" data-tab="dealers" onclick="switchTab('dealers')">Contractors</button>
+        <button class="sidebar-tab" data-tab="route" onclick="switchTab('route')">Route Builder</button>
+      </div>
+
+      <div class="dealer-panel active" id="dealer-panel">
+        <div class="stats-bar" id="stats-bar"></div>
+        <div class="filters">
+          <input type="text" id="search-input" placeholder="Search contractors..." oninput="filterList()">
+          <select id="status-filter" onchange="filterList()">
+            <option value="all">All Statuses</option>
+            <option value="not_contacted">Not Contacted</option>
+            <option value="contacted">Contacted</option>
+            <option value="follow_up">Follow Up</option>
+            <option value="closed">Closed</option>
+            <option value="not_interested">Not Interested</option>
+          </select>
+          <select id="trade-filter" onchange="filterList()">
+            <option value="all">All Trades</option>
+            <option value="General">General</option>
+            <option value="Roofing">Roofing</option>
+            <option value="Pool">Pool</option>
+            <option value="Fencing">Fencing</option>
+            <option value="Landscaping">Landscaping</option>
+            <option value="HVAC">HVAC</option>
+            <option value="Painting">Painting</option>
+            <option value="Plumbing">Plumbing</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Pressure Washing">Pressure Washing</option>
+            <option value="Paving">Paving</option>
+            <option value="Concrete">Concrete</option>
+            <option value="Decks">Decks</option>
+            <option value="Hardscaping">Hardscaping</option>
+            <option value="Gutters">Gutters</option>
+            <option value="Siding">Siding</option>
+            <option value="Tree Service">Tree Service</option>
+            <option value="Garage Door">Garage Door</option>
+            <option value="Other">Other</option>
+          </select>
+          <select id="contact-filter" onchange="filterList()">
+            <option value="all">All Contacts</option>
+            <option value="has_email">Has Email</option>
+            <option value="has_website">Has Website</option>
+            <option value="no_website">No Website</option>
+          </select>
+        </div>
+        <div class="dealer-list" id="dealer-list"></div>
+      </div>
+
+      <div class="route-panel" id="route-panel">
+        <div class="route-header">
+          <h3>Build a Sales Route</h3>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+            Check contractors in the list to add them as stops, then optimize.
+          </p>
+          <div class="route-actions">
+            <button class="btn-primary" onclick="optimizeRoute()">Optimize Route</button>
+            <button class="btn-secondary" onclick="openInGoogleMaps()">Open in Maps</button>
+            <button class="btn-danger" onclick="clearRoute()">Clear</button>
+          </div>
+        </div>
+        <div class="route-stops" id="route-stops">
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+            <p>Select contractors from the list to add stops to your route.</p>
+          </div>
+        </div>
+        <div class="route-summary" id="route-summary" style="display:none;"></div>
+      </div>
+    </div>
+
+    <div class="map-container">
+      <div id="map"></div>
+      <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+        <p id="loading-text">Loading contractors...</p>
+      </div>
+      <div class="api-prompt" id="api-prompt" style="display:none;">
+        <h2>Google Maps API Key Required</h2>
+        <p>Enter your Google Maps API key to load the map and search for contractors. You need Maps JavaScript API, Places API, and Directions API enabled.</p>
+        <input type="text" id="api-key-input" placeholder="AIza...">
+        <button onclick="saveApiKey()">Save & Load Map</button>
+        <p style="margin-top:16px; font-size:12px;">
+          Get a key at <a href="https://console.cloud.google.com/apis" target="_blank" style="color:var(--accent);">Google Cloud Console</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div class="modal-overlay" id="edit-modal">
+    <div class="modal">
+      <h2 id="modal-title">Edit Contractor</h2>
+      <input type="hidden" id="edit-dealer-id">
+      <label>Company Name</label>
+      <input type="text" id="edit-name">
+      <label>Address</label>
+      <input type="text" id="edit-address">
+      <label>Phone</label>
+      <input type="text" id="edit-phone">
+      <label>Contact Email</label>
+      <input type="email" id="edit-contact-email" placeholder="owner@company.com">
+      <label>Website</label>
+      <input type="url" id="edit-website" placeholder="https://www.company.com">
+      <label>Trade</label>
+      <select id="edit-trade">
+        <option value="General">General Contractor</option>
+        <option value="Roofing">Roofing</option>
+        <option value="Pool">Pool</option>
+        <option value="Fencing">Fencing</option>
+        <option value="Landscaping">Landscaping</option>
+        <option value="HVAC">HVAC</option>
+        <option value="Painting">Painting</option>
+        <option value="Plumbing">Plumbing</option>
+        <option value="Electrical">Electrical</option>
+        <option value="Pressure Washing">Pressure Washing</option>
+        <option value="Paving">Paving</option>
+        <option value="Concrete">Concrete</option>
+        <option value="Decks">Decks</option>
+        <option value="Hardscaping">Hardscaping</option>
+        <option value="Gutters">Gutters</option>
+        <option value="Siding">Siding</option>
+        <option value="Tree Service">Tree Service</option>
+        <option value="Garage Door">Garage Door</option>
+        <option value="Other">Other</option>
+      </select>
+      <label>Status</label>
+      <select id="edit-status">
+        <option value="not_contacted">Not Contacted</option>
+        <option value="contacted">Contacted</option>
+        <option value="follow_up">Follow Up</option>
+        <option value="closed">Closed / Won</option>
+        <option value="not_interested">Not Interested</option>
+      </select>
+      <label>Notes</label>
+      <textarea id="edit-notes" placeholder="Add any notes about this contractor..."></textarea>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn-danger" onclick="deleteContractor()" id="delete-btn">Delete</button>
+        <button class="btn-primary" onclick="saveContractor()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import Modal -->
+  <div class="modal-overlay" id="import-modal">
+    <div class="modal">
+      <h2>Import Data</h2>
+      <label>Paste exported JSON data below:</label>
+      <textarea id="import-textarea" style="min-height:200px;" placeholder='Paste JSON here...'></textarea>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeImportModal()">Cancel</button>
+        <button class="btn-primary" onclick="doImport()">Import</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GHL Settings Modal -->
+  <div class="modal-overlay" id="ghl-modal">
+    <div class="modal" style="width:560px; max-height:90vh;">
+      <h2 style="color:#FF6B35;">GoHighLevel Integration</h2>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
+        Sync contractors as contacts &amp; opportunities. Requires a Cloudflare Worker proxy.
+      </p>
+
+      <label>GHL API Key</label>
+      <input type="text" id="ghl-api-key" placeholder="eyJhbGciOi...">
+      <label>GHL Location ID</label>
+      <input type="text" id="ghl-location-id" placeholder="abc123...">
+      <label>Cloudflare Worker URL</label>
+      <input type="url" id="ghl-proxy-url" placeholder="https://your-worker.your-name.workers.dev">
+
+      <div style="margin-top:16px;padding:12px;background:var(--bg-input);border-radius:8px;font-size:12px;color:var(--text-secondary);">
+        <strong style="color:var(--text-primary);">Setup Steps:</strong><br>
+        1. Get your GHL API key from Settings &rarr; Business Profile<br>
+        2. Get your Location ID from the URL bar in GHL<br>
+        3. Deploy the Cloudflare Worker (see ghl-worker.js file)<br>
+        4. Paste the Worker URL above<br>
+        5. Click "Test Connection", then "Load Pipelines"
+      </div>
+
+      <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px;">
+        <h3 style="font-size:14px;margin-bottom:8px;color:#FF6B35;">Pipeline &amp; Opportunities</h3>
+        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">
+          Active leads (Contacted, Follow Up, Closed) auto-create Opportunities in your GHL pipeline.
+        </p>
+        <div style="display:flex;gap:8px;align-items:end;">
+          <div style="flex:1;">
+            <label>Pipeline</label>
+            <select id="ghl-pipeline" onchange="onPipelineSelect()" style="width:100%;">
+              <option value="">-- Load pipelines first --</option>
+            </select>
+          </div>
+          <button class="btn-secondary" onclick="loadGHLPipelines()" style="margin-bottom:0;padding:8px 14px;white-space:nowrap;">Load Pipelines</button>
+        </div>
+        <div id="ghl-stage-mapping" style="display:none;margin-top:12px;">
+          <label style="margin-bottom:8px;display:block;">Stage Mapping <span style="font-size:11px;color:var(--text-secondary);">(App Status &rarr; Pipeline Stage)</span></label>
+          <div id="ghl-stage-map-rows" style="display:flex;flex-direction:column;gap:6px;"></div>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top:16px;">
+        <button class="btn-secondary" onclick="closeGHLModal()">Cancel</button>
+        <button class="btn-secondary" onclick="testGHLConnection()">Test Connection</button>
+        <button class="btn-primary" onclick="pushToGHL()" style="background:#FF6B35;border-color:#FF6B35;">Push All to GHL</button>
+        <button class="btn-primary" onclick="saveGHLSettings()">Save Settings</button>
+      </div>
+      <div id="ghl-status" style="margin-top:12px;font-size:13px;display:none;"></div>
+    </div>
+  </div>
+
+  <script>
+    // ─── State ─────────────────────────────────────────────
+    let map, placesService, directionsService, directionsRenderer;
+    let contractors = {};      // id -> contractor object
+    let markers = {};          // id -> google marker
+    let routeStops = [];       // ordered ids
+    let selectedId = null;
+    let currentInfoWindow = null;
+    let activeRegion = 'all';  // 'all', 'nj', 'fl'
+    let isSearching = false;
+
+    const REGIONS = {
+      nj: {
+        label: 'New Jersey',
+        center: { lat: 40.0583, lng: -74.4057 },
+        zoom: 8,
+        bounds: { north: 41.3574, south: 38.9285, east: -73.8938, west: -75.5634 },
+        radius: 30000,
+        areas: [
+          { lat: 41.0534, lng: -74.7311 },  // Sussex / Vernon
+          { lat: 41.0470, lng: -74.1310 },  // West Milford
+          { lat: 40.8568, lng: -74.2263 },  // Paterson
+          { lat: 40.8839, lng: -74.0430 },  // Hackensack
+          { lat: 40.7282, lng: -74.0776 },  // Newark
+          { lat: 40.7580, lng: -74.2340 },  // Livingston
+          { lat: 40.8645, lng: -74.4015 },  // Parsippany
+          { lat: 40.6340, lng: -74.4057 },  // Bridgewater
+          { lat: 40.4774, lng: -74.2591 },  // Middlesex
+          { lat: 40.3573, lng: -74.6672 },  // Princeton
+          { lat: 40.2206, lng: -74.7597 },  // Trenton
+          { lat: 40.5890, lng: -74.6155 },  // Flemington
+          { lat: 40.6637, lng: -74.6930 },  // Warren
+          { lat: 40.0583, lng: -74.1357 },  // Monmouth
+          { lat: 40.2171, lng: -74.0124 },  // Asbury Park
+          { lat: 39.9242, lng: -74.1773 },  // Toms River
+          { lat: 39.7560, lng: -74.2090 },  // Manahawkin
+          { lat: 39.9526, lng: -75.1652 },  // Camden
+          { lat: 39.8560, lng: -74.9300 },  // Cherry Hill
+          { lat: 39.7092, lng: -74.9646 },  // Burlington
+          { lat: 39.4220, lng: -75.2320 },  // Salem
+          { lat: 39.4817, lng: -75.0260 },  // Vineland
+          { lat: 39.3643, lng: -74.4229 },  // Atlantic City
+          { lat: 39.2904, lng: -74.5720 },  // Egg Harbor
+          { lat: 38.9351, lng: -74.9060 },  // Cape May
+        ]
+      },
+      fl: {
+        label: 'Hillsborough County FL',
+        center: { lat: 27.9506, lng: -82.4572 },
+        zoom: 10,
+        bounds: { north: 28.25, south: 27.55, east: -82.05, west: -82.75 },
+        radius: 15000,
+        areas: [
+          { lat: 27.9506, lng: -82.4572 },  // Tampa
+          { lat: 27.9378, lng: -82.2859 },  // Brandon
+          { lat: 28.0186, lng: -82.1193 },  // Plant City
+          { lat: 27.8753, lng: -82.3265 },  // Riverview
+          { lat: 27.9320, lng: -82.2365 },  // Valrico
+          { lat: 28.0353, lng: -82.3893 },  // Temple Terrace
+          { lat: 28.0553, lng: -82.5093 },  // Carrollwood
+          { lat: 28.1512, lng: -82.4615 },  // Lutz
+          { lat: 28.0114, lng: -82.5773 },  // Town N Country
+          { lat: 27.7206, lng: -82.4332 },  // Ruskin
+          { lat: 27.7731, lng: -82.4076 },  // Apollo Beach
+          { lat: 28.0603, lng: -82.3021 },  // Thonotosassa
+        ]
+      }
+    };
+
+    // Search configs — types and keywords for contractor discovery
+    const SEARCH_CONFIGS = [
+      { type: 'general_contractor', trade: 'General' },
+      { type: 'roofing_contractor', trade: 'Roofing' },
+      { type: 'electrician', trade: 'Electrical' },
+      { type: 'plumber', trade: 'Plumbing' },
+      { type: 'painter', trade: 'Painting' },
+      { keyword: 'pool contractor', trade: 'Pool' },
+      { keyword: 'pool company', trade: 'Pool' },
+      { keyword: 'fencing contractor', trade: 'Fencing' },
+      { keyword: 'fence company', trade: 'Fencing' },
+      { keyword: 'landscaping company', trade: 'Landscaping' },
+      { keyword: 'landscaper', trade: 'Landscaping' },
+      { keyword: 'HVAC contractor', trade: 'HVAC' },
+      { keyword: 'HVAC company', trade: 'HVAC' },
+      { keyword: 'pressure washing', trade: 'Pressure Washing' },
+      { keyword: 'paving contractor', trade: 'Paving' },
+      { keyword: 'concrete contractor', trade: 'Concrete' },
+      { keyword: 'deck builder', trade: 'Decks' },
+      { keyword: 'deck contractor', trade: 'Decks' },
+      { keyword: 'hardscaping', trade: 'Hardscaping' },
+      { keyword: 'gutter company', trade: 'Gutters' },
+      { keyword: 'gutter installation', trade: 'Gutters' },
+      { keyword: 'siding contractor', trade: 'Siding' },
+      { keyword: 'tree service', trade: 'Tree Service' },
+      { keyword: 'tree removal', trade: 'Tree Service' },
+      { keyword: 'garage door company', trade: 'Garage Door' },
+    ];
+
+    const STATUS_LABELS = {
+      not_contacted: 'Not Contacted',
+      contacted: 'Contacted',
+      follow_up: 'Follow Up',
+      closed: 'Closed',
+      not_interested: 'Not Interested'
+    };
+
+    const MARKER_COLORS = {
+      not_contacted: '#a0aec0',
+      contacted: '#4a90d9',
+      follow_up: '#ecc94b',
+      closed: '#48bb78',
+      not_interested: '#fc8181'
+    };
+
+    // ─── Init ──────────────────────────────────────────────
+    function init() {
+      const params = new URLSearchParams(window.location.search);
+      const urlApiKey = params.get('apikey');
+      if (urlApiKey) localStorage.setItem('gmaps_api_key', urlApiKey);
+
+      const apiKey = localStorage.getItem('gmaps_api_key');
+      if (!apiKey) {
+        document.getElementById('loading-overlay').classList.add('hidden');
+        document.getElementById('api-prompt').style.display = 'flex';
+        return;
+      }
+      loadGoogleMaps(apiKey);
+    }
+
+    function saveApiKey() {
+      const key = document.getElementById('api-key-input').value.trim();
+      if (!key) return;
+      localStorage.setItem('gmaps_api_key', key);
+      document.getElementById('api-prompt').style.display = 'none';
+      document.getElementById('loading-overlay').classList.remove('hidden');
+      loadGoogleMaps(key);
+    }
+
+    function changeApiKey() {
+      const key = prompt('Enter new Google Maps API Key:', localStorage.getItem('gmaps_api_key') || '');
+      if (key !== null && key.trim()) {
+        localStorage.setItem('gmaps_api_key', key.trim());
+        location.reload();
+      }
+    }
+
+    function loadGoogleMaps(apiKey) {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initMap`;
+      script.async = true;
+      script.defer = true;
+      script.onerror = () => {
+        document.getElementById('loading-overlay').classList.add('hidden');
+        document.getElementById('api-prompt').style.display = 'flex';
+        alert('Failed to load Google Maps. Check your API key.');
+      };
+      document.head.appendChild(script);
+    }
+
+    function initMap() {
+      const defaultRegion = REGIONS.nj;
+      map = new google.maps.Map(document.getElementById('map'), {
+        center: defaultRegion.center,
+        zoom: 8,
+        styles: [
+          { elementType: 'geometry', stylers: [{ color: '#1d2c4d' }] },
+          { elementType: 'labels.text.stroke', stylers: [{ color: '#1a1a2e' }] },
+          { elementType: 'labels.text.fill', stylers: [{ color: '#8ec3b9' }] },
+          { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#4b6878' }] },
+          { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#1f2b47' }] },
+          { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#283d6a' }] },
+          { featureType: 'poi.park', elementType: 'geometry.fill', stylers: [{ color: '#1d3d2e' }] },
+          { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#304a7d' }] },
+          { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#2c6975' }] },
+          { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0e1626' }] },
+        ]
+      });
+
+      placesService = new google.maps.places.PlacesService(map);
+      directionsService = new google.maps.DirectionsService();
+      directionsRenderer = new google.maps.DirectionsRenderer({
+        map: map,
+        suppressMarkers: true,
+        polylineOptions: { strokeColor: '#4a90d9', strokeWeight: 4, strokeOpacity: 0.8 }
+      });
+
+      loadFromStorage();
+
+      if (Object.keys(contractors).length === 0) {
+        searchContractors('nj');
+      } else {
+        document.getElementById('loading-overlay').classList.add('hidden');
+        renderAllMarkers();
+        renderList();
+        updateStats();
+      }
+    }
+
+    // ─── Region Toggle ────────────────────────────────────
+    function setRegion(region) {
+      activeRegion = region;
+      document.querySelectorAll('.region-toggle button').forEach(b => {
+        b.classList.toggle('active', b.dataset.region === region);
+      });
+
+      // Pan map to region
+      if (region !== 'all' && REGIONS[region]) {
+        map.panTo(REGIONS[region].center);
+        map.setZoom(REGIONS[region].zoom);
+      } else {
+        map.panTo(REGIONS.nj.center);
+        map.setZoom(7);
+      }
+
+      // Show/hide markers based on region
+      Object.values(contractors).forEach(c => {
+        const marker = markers[c.id];
+        if (marker) {
+          const visible = activeRegion === 'all' || c.region === activeRegion;
+          marker.setVisible(visible);
+        }
+      });
+
+      renderList();
+      updateStats();
+    }
+
+    // ─── Places API Search ────────────────────────────────
+    function searchContractors(regionKey) {
+      const region = REGIONS[regionKey];
+      if (!region) return;
+
+      isSearching = true;
+      document.getElementById('loading-text').textContent = `Searching for contractors in ${region.label}...`;
+
+      // Build flat queue: each (area, searchConfig) combination
+      const queue = [];
+      region.areas.forEach(area => {
+        SEARCH_CONFIGS.forEach(config => {
+          queue.push({ area, config, region: regionKey, radius: region.radius });
+        });
+      });
+
+      let completed = 0;
+      const total = queue.length;
+      let batchIdx = 0;
+      const CONCURRENCY = 2;
+
+      function processNext() {
+        if (batchIdx >= total) {
+          // All done
+          if (completed >= total) finishSearch(regionKey);
+          return;
+        }
+
+        const batch = [];
+        for (let i = 0; i < CONCURRENCY && batchIdx < total; i++, batchIdx++) {
+          batch.push(queue[batchIdx]);
+        }
+
+        batch.forEach(item => {
+          searchSingle(item.area, item.config, item.region, item.radius, () => {
+            completed++;
+            const found = Object.keys(contractors).length;
+            document.getElementById('loading-text').textContent =
+              `Found ${found} contractors... (${completed}/${total} searches)`;
+
+            if (completed >= total) finishSearch(regionKey);
+          });
+        });
+
+        // Stagger next batch
+        setTimeout(processNext, 700);
+      }
+
+      processNext();
+    }
+
+    function searchSingle(location, config, regionKey, radius, callback) {
+      const request = {
+        location: location,
+        radius: radius
+      };
+
+      if (config.type) {
+        request.type = config.type;
+      } else if (config.keyword) {
+        request.keyword = config.keyword;
+      }
+
+      function handleResults(results, status, pagination) {
+        if (status === google.maps.places.PlacesServiceStatus.OK) {
+          results.forEach(place => {
+            if (!contractors[place.place_id]) {
+              addContractorFromPlace(place, config.trade, regionKey);
+            }
+          });
+
+          const found = Object.keys(contractors).length;
+          const loadingText = document.getElementById('loading-text');
+          if (loadingText) loadingText.textContent = `Found ${found} contractors...`;
+
+          if (pagination && pagination.hasNextPage) {
+            setTimeout(() => pagination.nextPage(), 400);
+            return;
+          }
+        }
+        callback();
+      }
+
+      placesService.nearbySearch(request, handleResults);
+    }
+
+    function finishSearch(regionKey) {
+      isSearching = false;
+      document.getElementById('loading-overlay').classList.add('hidden');
+      saveToStorage();
+      renderList();
+      updateStats();
+      const count = Object.values(contractors).filter(c => c.region === regionKey).length;
+      showToast(`Found ${count} contractors in ${REGIONS[regionKey]?.label || regionKey}`, 'success');
+    }
+
+    function rescanContractors() {
+      const regionToScan = activeRegion === 'all' ? null : activeRegion;
+
+      if (!regionToScan) {
+        alert('Select NJ or FL first — can\'t re-scan both at once.');
+        return;
+      }
+
+      const existingCount = Object.values(contractors).filter(c => c.region === regionToScan).length;
+      if (!confirm(`Re-scan ${REGIONS[regionToScan].label} for new contractors?\n\nYour ${existingCount} existing contractors (statuses, notes, etc.) will be kept.\nOnly NEW contractors will be added.`)) return;
+
+      const overlay = document.getElementById('loading-overlay');
+      overlay.classList.remove('hidden');
+
+      const btn = document.getElementById('rescan-btn');
+      btn.disabled = true;
+      btn.textContent = 'Scanning...';
+
+      searchContractors(regionToScan);
+
+      const check = setInterval(() => {
+        if (!isSearching) {
+          clearInterval(check);
+          const newCount = Object.values(contractors).filter(c => c.region === regionToScan).length;
+          const added = newCount - existingCount;
+          btn.disabled = false;
+          btn.textContent = 'Re-scan';
+          showToast(`Scan complete — ${added} new contractor${added !== 1 ? 's' : ''} found (${newCount} total in ${REGIONS[regionToScan].label})`, added > 0 ? 'success' : 'info');
+        }
+      }, 500);
+    }
+
+    function addContractorFromPlace(place, trade, regionKey) {
+      // Detect trade from business name if tagged as General
+      const detectedTrade = detectTrade(place.name, trade);
+
+      const contractor = {
+        id: place.place_id,
+        name: place.name,
+        address: place.vicinity || '',
+        lat: place.geometry.location.lat(),
+        lng: place.geometry.location.lng(),
+        phone: '',
+        contactEmail: '',
+        website: '',
+        status: 'not_contacted',
+        notes: '',
+        rating: place.rating || null,
+        trade: detectedTrade,
+        region: regionKey,
+        addedAt: new Date().toISOString()
+      };
+
+      placesService.getDetails({
+        placeId: place.place_id,
+        fields: ['formatted_phone_number', 'formatted_address', 'website']
+      }, (details, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK) {
+          contractor.phone = details.formatted_phone_number || '';
+          contractor.website = details.website || '';
+          if (details.formatted_address) contractor.address = details.formatted_address;
+          saveToStorage();
+          renderList();
+        }
+      });
+
+      contractors[contractor.id] = contractor;
+      addMarker(contractor);
+    }
+
+    function detectTrade(name, defaultTrade) {
+      if (defaultTrade !== 'General') return defaultTrade;
+      const n = name.toLowerCase();
+      const tradeKeywords = {
+        'Roofing': ['roof', 'roofing'],
+        'Pool': ['pool', 'swim'],
+        'Fencing': ['fence', 'fencing'],
+        'Landscaping': ['landscape', 'landscaping', 'lawn', 'garden'],
+        'HVAC': ['hvac', 'heating', 'cooling', 'air condition'],
+        'Painting': ['paint', 'painting'],
+        'Plumbing': ['plumb', 'plumbing'],
+        'Electrical': ['electric', 'electrical'],
+        'Pressure Washing': ['pressure wash', 'power wash'],
+        'Paving': ['paving', 'asphalt', 'blacktop'],
+        'Concrete': ['concrete', 'cement', 'masonry'],
+        'Decks': ['deck', 'patio'],
+        'Hardscaping': ['hardscape', 'stone', 'paver'],
+        'Gutters': ['gutter'],
+        'Siding': ['siding', 'vinyl'],
+        'Tree Service': ['tree service', 'tree removal', 'arborist', 'tree care'],
+        'Garage Door': ['garage door'],
+      };
+
+      for (const [trade, keywords] of Object.entries(tradeKeywords)) {
+        if (keywords.some(kw => n.includes(kw))) return trade;
+      }
+      return 'General';
+    }
+
+    // ─── Markers ───────────────────────────────────────────
+    function addMarker(contractor) {
+      const marker = new google.maps.Marker({
+        position: { lat: contractor.lat, lng: contractor.lng },
+        map: map,
+        title: contractor.name,
+        icon: makeMarkerIcon(contractor.status),
+        visible: activeRegion === 'all' || contractor.region === activeRegion
+      });
+
+      marker.addListener('click', () => showInfoWindow(contractor, marker));
+      markers[contractor.id] = marker;
+    }
+
+    function makeMarkerIcon(status) {
+      return {
+        path: google.maps.SymbolPath.CIRCLE,
+        fillColor: MARKER_COLORS[status] || '#a0aec0',
+        fillOpacity: 1,
+        strokeColor: '#fff',
+        strokeWeight: 2,
+        scale: 8
+      };
+    }
+
+    function renderAllMarkers() {
+      Object.values(contractors).forEach(c => { if (!markers[c.id]) addMarker(c); });
+    }
+
+    function updateMarkerIcon(id) {
+      const c = contractors[id];
+      const m = markers[id];
+      if (c && m) m.setIcon(makeMarkerIcon(c.status));
+    }
+
+    function showInfoWindow(contractor, marker) {
+      if (currentInfoWindow) currentInfoWindow.close();
+      const inRoute = routeStops.includes(contractor.id);
+      const content = `
+        <div style="color:#e0e0e0; font-family:-apple-system,sans-serif; padding:4px; min-width:200px;">
+          <div style="font-weight:700; font-size:14px; margin-bottom:4px;">${escHtml(contractor.name)}</div>
+          <div style="font-size:11px; margin-bottom:4px;">
+            <span style="padding:1px 6px;border-radius:4px;background:rgba(183,148,244,0.2);color:#b794f4;font-weight:600;">${escHtml(contractor.trade)}</span>
+            <span style="margin-left:4px;color:#a0aec0;font-size:10px;">${contractor.region.toUpperCase()}</span>
+          </div>
+          <div style="font-size:12px; color:#a0aec0; margin-bottom:2px;">${escHtml(contractor.address)}</div>
+          ${contractor.phone ? `<div style="font-size:12px; color:#a0aec0; margin-bottom:2px;">${escHtml(contractor.phone)}</div>` : ''}
+          ${contractor.contactEmail ? `<div style="font-size:12px; color:#4a90d9; margin-bottom:2px;">${escHtml(contractor.contactEmail)}</div>` : ''}
+          ${contractor.website ? `<div style="font-size:11px; margin-bottom:4px;"><a href="${escHtml(contractor.website)}" target="_blank" style="color:#4a90d9;">Website</a></div>` : ''}
+          <div style="margin-bottom:8px;">
+            <span style="display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600;
+              background:${MARKER_COLORS[contractor.status]}33; color:${MARKER_COLORS[contractor.status]};">
+              ${STATUS_LABELS[contractor.status]}
+            </span>
+          </div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button onclick="editContractor('${contractor.id}')"
+              style="padding:4px 12px; background:#4a90d9; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px;">
+              Edit
+            </button>
+            <button onclick="toggleRouteStop('${contractor.id}')"
+              style="padding:4px 12px; background:${inRoute ? '#fc8181' : '#48bb78'}; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px;">
+              ${inRoute ? 'Remove from Route' : 'Add to Route'}
+            </button>
+          </div>
+        </div>
+      `;
+      currentInfoWindow = new google.maps.InfoWindow({ content });
+      currentInfoWindow.open(map, marker);
+    }
+
+    // ─── Contractor List ──────────────────────────────────
+    function renderList() {
+      const list = document.getElementById('dealer-list');
+      const searchVal = document.getElementById('search-input').value.toLowerCase();
+      const statusFilter = document.getElementById('status-filter').value;
+      const tradeFilter = document.getElementById('trade-filter').value;
+      const contactFilter = document.getElementById('contact-filter').value;
+
+      let filtered = Object.values(contractors).filter(c => {
+        if (activeRegion !== 'all' && c.region !== activeRegion) return false;
+        const matchesSearch = !searchVal ||
+          c.name.toLowerCase().includes(searchVal) ||
+          c.address.toLowerCase().includes(searchVal) ||
+          c.trade.toLowerCase().includes(searchVal);
+        const matchesStatus = statusFilter === 'all' || c.status === statusFilter;
+        const matchesTrade = tradeFilter === 'all' || c.trade === tradeFilter;
+        let matchesContact = true;
+        if (contactFilter === 'has_email') matchesContact = !!c.contactEmail;
+        else if (contactFilter === 'has_website') matchesContact = !!c.website;
+        else if (contactFilter === 'no_website') matchesContact = !c.website;
+        return matchesSearch && matchesStatus && matchesTrade && matchesContact;
+      });
+
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
+
+      if (filtered.length === 0) {
+        list.innerHTML = `<div class="empty-state"><p>No contractors found matching your filters.</p></div>`;
+        return;
+      }
+
+      list.innerHTML = filtered.map(c => {
+        const inRoute = routeStops.includes(c.id);
+        return `
+          <div class="dealer-card ${c.id === selectedId ? 'selected' : ''}" onclick="focusContractor('${c.id}')">
+            <input type="checkbox" class="route-checkbox" ${inRoute ? 'checked' : ''}
+              onclick="event.stopPropagation(); toggleRouteStop('${c.id}')" title="Add/remove from route">
+            <div class="trade-badge">${escHtml(c.trade)}</div>
+            <div class="dealer-name">${escHtml(c.name)}</div>
+            <div class="dealer-address">${escHtml(c.address)}</div>
+            ${c.phone ? `<div class="dealer-phone">${escHtml(c.phone)}</div>` : ''}
+            ${c.contactEmail ? `<div class="dealer-phone" style="color:#4a90d9;">${escHtml(c.contactEmail)}</div>` : ''}
+            ${c.website ? `<div class="dealer-phone"><a href="${escHtml(c.website)}" target="_blank" style="color:#4a90d9;text-decoration:none;font-size:11px;">${escHtml(c.website)}</a></div>` : `<div class="dealer-phone" style="color:var(--orange);font-style:italic;font-size:11px;">No website</div>`}
+            <span class="status-badge status-${c.status}">${STATUS_LABELS[c.status]}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterList() { renderList(); }
+
+    function focusContractor(id) {
+      selectedId = id;
+      const c = contractors[id];
+      if (c && map) {
+        map.panTo({ lat: c.lat, lng: c.lng });
+        map.setZoom(14);
+        if (markers[id]) showInfoWindow(c, markers[id]);
+      }
+      renderList();
+    }
+
+    function updateStats() {
+      const all = Object.values(contractors).filter(c => activeRegion === 'all' || c.region === activeRegion);
+      const total = all.length;
+      const counts = {};
+      let hasEmail = 0, hasWebsite = 0;
+      all.forEach(c => {
+        counts[c.status] = (counts[c.status] || 0) + 1;
+        if (c.contactEmail) hasEmail++;
+        if (c.website) hasWebsite++;
+      });
+
+      const regionLabel = activeRegion === 'all' ? 'All' : REGIONS[activeRegion]?.label || activeRegion.toUpperCase();
+
+      document.getElementById('stats-bar').innerHTML = `
+        <span class="stat-item"><strong>${total}</strong> Total (${regionLabel})</span>
+        <span class="stat-item" style="color:${MARKER_COLORS.contacted}"><strong>${counts.contacted || 0}</strong> Contacted</span>
+        <span class="stat-item" style="color:${MARKER_COLORS.follow_up}"><strong>${counts.follow_up || 0}</strong> Follow Up</span>
+        <span class="stat-item" style="color:${MARKER_COLORS.closed}"><strong>${counts.closed || 0}</strong> Closed</span>
+        <span style="border-left:1px solid var(--border);height:14px;"></span>
+        <span class="stat-item" style="color:var(--purple)"><strong>${hasWebsite}</strong> Sites</span>
+      `;
+    }
+
+    // ─── Edit / Add Contractor ────────────────────────────
+    function editContractor(id) {
+      if (currentInfoWindow) currentInfoWindow.close();
+      const c = contractors[id];
+      if (!c) return;
+
+      document.getElementById('modal-title').textContent = 'Edit Contractor';
+      document.getElementById('edit-dealer-id').value = id;
+      document.getElementById('edit-name').value = c.name;
+      document.getElementById('edit-address').value = c.address;
+      document.getElementById('edit-phone').value = c.phone;
+      document.getElementById('edit-contact-email').value = c.contactEmail || '';
+      document.getElementById('edit-website').value = c.website || '';
+      document.getElementById('edit-trade').value = c.trade || 'General';
+      document.getElementById('edit-status').value = c.status;
+      document.getElementById('edit-notes').value = c.notes;
+      document.getElementById('delete-btn').style.display = 'inline-block';
+      document.getElementById('edit-modal').classList.add('active');
+    }
+
+    function addContractorManual() {
+      document.getElementById('modal-title').textContent = 'Add Contractor';
+      document.getElementById('edit-dealer-id').value = '';
+      document.getElementById('edit-name').value = '';
+      document.getElementById('edit-address').value = '';
+      document.getElementById('edit-phone').value = '';
+      document.getElementById('edit-contact-email').value = '';
+      document.getElementById('edit-website').value = '';
+      document.getElementById('edit-trade').value = 'General';
+      document.getElementById('edit-status').value = 'not_contacted';
+      document.getElementById('edit-notes').value = '';
+      document.getElementById('delete-btn').style.display = 'none';
+      document.getElementById('edit-modal').classList.add('active');
+    }
+
+    function saveContractor() {
+      const id = document.getElementById('edit-dealer-id').value;
+      const name = document.getElementById('edit-name').value.trim();
+      const address = document.getElementById('edit-address').value.trim();
+      if (!name) { alert('Name is required'); return; }
+
+      let contractorId = id;
+      let oldStatus = null;
+      const newStatus = document.getElementById('edit-status').value;
+
+      if (id && contractors[id]) {
+        oldStatus = contractors[id].status;
+        contractors[id].name = name;
+        contractors[id].address = address;
+        contractors[id].phone = document.getElementById('edit-phone').value.trim();
+        contractors[id].contactEmail = document.getElementById('edit-contact-email').value.trim();
+        contractors[id].website = document.getElementById('edit-website').value.trim();
+        contractors[id].trade = document.getElementById('edit-trade').value;
+        contractors[id].status = newStatus;
+        contractors[id].notes = document.getElementById('edit-notes').value.trim();
+        updateMarkerIcon(id);
+      } else {
+        const newId = 'manual_' + Date.now();
+        contractorId = newId;
+        const region = activeRegion === 'all' ? 'nj' : activeRegion;
+        const c = {
+          id: newId, name, address,
+          phone: document.getElementById('edit-phone').value.trim(),
+          contactEmail: document.getElementById('edit-contact-email').value.trim(),
+          website: document.getElementById('edit-website').value.trim(),
+          trade: document.getElementById('edit-trade').value,
+          status: newStatus,
+          notes: document.getElementById('edit-notes').value.trim(),
+          lat: REGIONS[region].center.lat,
+          lng: REGIONS[region].center.lng,
+          region: region,
+          addedAt: new Date().toISOString()
+        };
+
+        if (address) {
+          const geocoder = new google.maps.Geocoder();
+          geocoder.geocode({ address }, (results, status) => {
+            if (status === 'OK' && results[0]) {
+              c.lat = results[0].geometry.location.lat();
+              c.lng = results[0].geometry.location.lng();
+              if (markers[newId]) markers[newId].setPosition({ lat: c.lat, lng: c.lng });
+              saveToStorage();
+            }
+          });
+        }
+
+        contractors[newId] = c;
+        addMarker(c);
+      }
+
+      saveToStorage();
+      renderList();
+      updateStats();
+      closeModal();
+
+      if (isGHLConfigured() && oldStatus !== newStatus) {
+        syncToGHL(contractorId, oldStatus);
+      }
+    }
+
+    function deleteContractor() {
+      const id = document.getElementById('edit-dealer-id').value;
+      if (!id || !confirm('Delete this contractor?')) return;
+      if (markers[id]) { markers[id].setMap(null); delete markers[id]; }
+      delete contractors[id];
+      routeStops = routeStops.filter(s => s !== id);
+      saveToStorage();
+      renderList();
+      renderRouteStops();
+      updateStats();
+      closeModal();
+    }
+
+    function closeModal() { document.getElementById('edit-modal').classList.remove('active'); }
+
+    // ─── Route Builder ─────────────────────────────────────
+    function toggleRouteStop(id) {
+      const idx = routeStops.indexOf(id);
+      if (idx > -1) routeStops.splice(idx, 1);
+      else routeStops.push(id);
+      saveToStorage();
+      renderList();
+      renderRouteStops();
+    }
+
+    function renderRouteStops() {
+      const container = document.getElementById('route-stops');
+      const summary = document.getElementById('route-summary');
+
+      if (routeStops.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+            <p>Select contractors from the list to add stops to your route.</p>
+          </div>`;
+        summary.style.display = 'none';
+        directionsRenderer.setDirections({ routes: [] });
+        return;
+      }
+
+      container.innerHTML = routeStops.map((id, idx) => {
+        const c = contractors[id];
+        if (!c) return '';
+        return `
+          <div class="route-stop" draggable="true" ondragstart="dragStart(event, ${idx})" ondragover="dragOver(event)" ondrop="dropStop(event, ${idx})">
+            <span class="drag-handle">&#x2630;</span>
+            <div class="stop-number">${idx + 1}</div>
+            <div class="stop-info">
+              <div class="stop-name">${escHtml(c.name)}</div>
+              <div class="stop-addr">${escHtml(c.address)}</div>
+            </div>
+            <button class="stop-remove" onclick="removeStop(${idx})">&times;</button>
+          </div>`;
+      }).join('');
+
+      summary.style.display = 'block';
+      summary.innerHTML = `<strong>${routeStops.length}</strong> stops in route`;
+    }
+
+    function removeStop(idx) {
+      routeStops.splice(idx, 1);
+      saveToStorage();
+      renderList();
+      renderRouteStops();
+    }
+
+    let dragIdx = null;
+    function dragStart(e, idx) { dragIdx = idx; e.dataTransfer.effectAllowed = 'move'; }
+    function dragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+    function dropStop(e, idx) {
+      e.preventDefault();
+      if (dragIdx === null || dragIdx === idx) return;
+      const item = routeStops.splice(dragIdx, 1)[0];
+      routeStops.splice(idx, 0, item);
+      dragIdx = null;
+      saveToStorage();
+      renderRouteStops();
+    }
+
+    function optimizeRoute() {
+      if (routeStops.length < 2) { alert('Add at least 2 stops to optimize.'); return; }
+      const stops = [...routeStops];
+      const optimized = [stops.shift()];
+      while (stops.length > 0) {
+        const last = contractors[optimized[optimized.length - 1]];
+        let nearestIdx = 0, nearestDist = Infinity;
+        stops.forEach((id, idx) => {
+          const c = contractors[id];
+          const dist = haversine(last.lat, last.lng, c.lat, c.lng);
+          if (dist < nearestDist) { nearestDist = dist; nearestIdx = idx; }
+        });
+        optimized.push(stops.splice(nearestIdx, 1)[0]);
+      }
+      routeStops = optimized;
+      saveToStorage();
+      renderRouteStops();
+      renderList();
+      drawRoute();
+    }
+
+    function haversine(lat1, lng1, lat2, lng2) {
+      const R = 3959;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function drawRoute() {
+      if (routeStops.length < 2) return;
+      const stops = routeStops.map(id => contractors[id]).filter(Boolean);
+      const origin = { lat: stops[0].lat, lng: stops[0].lng };
+      const destination = { lat: stops[stops.length-1].lat, lng: stops[stops.length-1].lng };
+      const waypoints = stops.slice(1, -1).map(c => ({ location: { lat: c.lat, lng: c.lng }, stopover: true })).slice(0, 23);
+
+      directionsService.route({ origin, destination, waypoints, travelMode: google.maps.TravelMode.DRIVING }, (result, status) => {
+        if (status === 'OK') {
+          directionsRenderer.setDirections(result);
+          let totalDist = 0, totalDur = 0;
+          result.routes[0].legs.forEach(leg => { totalDist += leg.distance.value; totalDur += leg.duration.value; });
+          const miles = (totalDist / 1609.34).toFixed(1);
+          const hours = Math.floor(totalDur / 3600);
+          const mins = Math.round((totalDur % 3600) / 60);
+          document.getElementById('route-summary').innerHTML = `<strong>${routeStops.length}</strong> stops | <strong>${miles}</strong> miles | <strong>${hours}h ${mins}m</strong> driving`;
+        }
+      });
+    }
+
+    function openInGoogleMaps() {
+      if (routeStops.length < 2) { alert('Add at least 2 stops first.'); return; }
+      const stops = routeStops.map(id => contractors[id]).filter(Boolean);
+      const origin = `${stops[0].lat},${stops[0].lng}`;
+      const dest = `${stops[stops.length-1].lat},${stops[stops.length-1].lng}`;
+      const waypoints = stops.slice(1, -1).map(c => `${c.lat},${c.lng}`).join('|');
+      window.open(`https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&waypoints=${encodeURIComponent(waypoints)}&travelmode=driving`, '_blank');
+    }
+
+    function clearRoute() {
+      if (routeStops.length && !confirm('Clear all route stops?')) return;
+      routeStops = [];
+      directionsRenderer.setDirections({ routes: [] });
+      saveToStorage();
+      renderList();
+      renderRouteStops();
+    }
+
+    // ─── Tabs ──────────────────────────────────────────────
+    function switchTab(tab) {
+      document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+      document.getElementById('dealer-panel').classList.toggle('active', tab === 'dealers');
+      document.getElementById('route-panel').classList.toggle('active', tab === 'route');
+    }
+
+    // ─── Persistence ───────────────────────────────────────
+    function saveToStorage() {
+      localStorage.setItem('contractor_data', JSON.stringify(contractors));
+      localStorage.setItem('contractor_route_stops', JSON.stringify(routeStops));
+    }
+
+    function loadFromStorage() {
+      try {
+        const d = localStorage.getItem('contractor_data');
+        const r = localStorage.getItem('contractor_route_stops');
+        if (d) contractors = JSON.parse(d);
+        if (r) routeStops = JSON.parse(r);
+      } catch (e) { console.error('Failed to load data:', e); }
+    }
+
+    // ─── Export / Import ───────────────────────────────────
+    function exportData() {
+      const data = { contractors, routeStops, exportedAt: new Date().toISOString() };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `contractor-map-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importData() { document.getElementById('import-modal').classList.add('active'); }
+    function closeImportModal() { document.getElementById('import-modal').classList.remove('active'); }
+
+    function doImport() {
+      const raw = document.getElementById('import-textarea').value.trim();
+      if (!raw) return;
+      try {
+        const data = JSON.parse(raw);
+        if (data.contractors) Object.assign(contractors, data.contractors);
+        if (data.routeStops) routeStops = data.routeStops;
+        Object.values(markers).forEach(m => m.setMap(null));
+        markers = {};
+        renderAllMarkers();
+        saveToStorage();
+        renderList();
+        renderRouteStops();
+        updateStats();
+        closeImportModal();
+        alert(`Imported ${Object.keys(data.contractors || {}).length} contractors.`);
+      } catch (e) { alert('Invalid JSON data.'); }
+    }
+
+    // ─── Helpers ───────────────────────────────────────────
+    function escHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str || '';
+      return div.innerHTML;
+    }
+
+    // ─── Fetch Missing Websites ────────────────────────────
+    let fetchAborted = false;
+
+    async function fetchMissingWebsites() {
+      const missing = Object.values(contractors).filter(c =>
+        !c.website && (activeRegion === 'all' || c.region === activeRegion)
+      );
+      if (missing.length === 0) { alert('All contractors already have website URLs!'); return; }
+
+      const btn = document.getElementById('fetch-web-btn');
+      if (btn.dataset.running === 'true') { fetchAborted = true; btn.textContent = 'Stopping...'; return; }
+
+      fetchAborted = false;
+      btn.dataset.running = 'true';
+      btn.style.background = 'var(--red)';
+      btn.textContent = `0/${missing.length} (click to stop)`;
+
+      let fetched = 0, processed = 0, failures = 0;
+      const BATCH_SIZE = 10;
+
+      for (let i = 0; i < missing.length; i += BATCH_SIZE) {
+        if (fetchAborted) break;
+        const batch = missing.slice(i, i + BATCH_SIZE);
+        const promises = batch.map(c => new Promise(resolve => {
+          const timeout = setTimeout(() => { failures++; processed++; resolve(); }, 8000);
+          try {
+            placesService.getDetails({ placeId: c.id, fields: ['website', 'formatted_phone_number', 'formatted_address'] }, (details, status) => {
+              clearTimeout(timeout);
+              if (status === google.maps.places.PlacesServiceStatus.OK) {
+                if (details.website) { c.website = details.website; fetched++; }
+                if (details.formatted_phone_number && !c.phone) c.phone = details.formatted_phone_number;
+                if (details.formatted_address && (!c.address || c.address.length < 20)) c.address = details.formatted_address;
+              } else if (status === google.maps.places.PlacesServiceStatus.OVER_QUERY_LIMIT) { failures++; }
+              processed++;
+              resolve();
+            });
+          } catch (e) { clearTimeout(timeout); failures++; processed++; resolve(); }
+        }));
+
+        await Promise.all(promises);
+        btn.textContent = `${processed}/${missing.length} (click to stop)`;
+        saveToStorage();
+        if (!fetchAborted) await new Promise(r => setTimeout(r, 300));
+      }
+
+      saveToStorage();
+      renderList();
+      updateStats();
+      btn.dataset.running = 'false';
+      btn.style.background = 'var(--orange)';
+      btn.textContent = 'Fetch Websites';
+
+      const remaining = Object.values(contractors).filter(c => !c.website).length;
+      alert(`${fetchAborted ? 'Stopped!' : 'Done!'}\n\nFound websites for ${fetched} contractors.\n${failures > 0 ? `${failures} failed.\n` : ''}${remaining} still have no website.`);
+    }
+
+    // ─── CSV Export ─────────────────────────────────────────
+    function exportCSV() {
+      const rows = [['First Name', 'Last Name', 'Company Name', 'Phone', 'Email', 'Address', 'Website', 'Tags', 'Notes', 'Source']];
+      const list = Object.values(contractors).filter(c => activeRegion === 'all' || c.region === activeRegion);
+
+      list.forEach(c => {
+        const tags = [`status:${c.status}`, `trade:${c.trade}`, `region:${c.region}`, 'source:contractor-map'].join(',');
+        rows.push(['', '', c.name, c.phone || '', c.contactEmail || '', c.address || '', c.website || '', tags, (c.notes || '').replace(/"/g, '""'), 'Contractor Map']);
+      });
+
+      const csv = rows.map(r => r.map(col => `"${col}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `contractors-ghl-import-${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      alert(`Exported ${list.length} contractors as CSV.`);
+    }
+
+    // ─── Toast Notifications ────────────────────────────────
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+
+    // ─── GHL Integration ─────────────────────────────────────
+    let ghlPipelines = [];
+
+    function openGHLSettings() {
+      const settings = getGHLSettings();
+      document.getElementById('ghl-api-key').value = settings.apiKey || '';
+      document.getElementById('ghl-location-id').value = settings.locationId || '';
+      document.getElementById('ghl-proxy-url').value = settings.proxyUrl || '';
+      document.getElementById('ghl-status').style.display = 'none';
+      if (settings.pipelineId && ghlPipelines.length > 0) {
+        document.getElementById('ghl-pipeline').value = settings.pipelineId;
+        renderStageMapping();
+      }
+      document.getElementById('ghl-modal').classList.add('active');
+    }
+
+    function closeGHLModal() { document.getElementById('ghl-modal').classList.remove('active'); }
+
+    function saveGHLSettings() {
+      const existing = getGHLSettings();
+      const settings = {
+        apiKey: document.getElementById('ghl-api-key').value.trim(),
+        locationId: document.getElementById('ghl-location-id').value.trim(),
+        proxyUrl: document.getElementById('ghl-proxy-url').value.trim().replace(/\/$/, ''),
+        pipelineId: document.getElementById('ghl-pipeline').value || existing.pipelineId || '',
+        statusToStageMap: existing.statusToStageMap || {}
+      };
+      const mapRows = document.querySelectorAll('.stage-map-row select');
+      if (mapRows.length > 0) {
+        settings.statusToStageMap = {};
+        mapRows.forEach(sel => { if (sel.value) settings.statusToStageMap[sel.dataset.status] = sel.value; });
+      }
+      localStorage.setItem('ghl_settings', JSON.stringify(settings));
+      showGHLStatus('Settings saved!', 'var(--green)');
+    }
+
+    function getGHLSettings() { return JSON.parse(localStorage.getItem('ghl_settings') || '{}'); }
+    function isGHLConfigured() { const s = getGHLSettings(); return !!(s.proxyUrl && s.apiKey && s.locationId && s.pipelineId); }
+    function showGHLStatus(msg, color) { const el = document.getElementById('ghl-status'); el.style.display = 'block'; el.style.color = color || 'var(--text-secondary)'; el.textContent = msg; }
+
+    async function ghlRequest(method, endpoint, body) {
+      const settings = getGHLSettings();
+      if (!settings.proxyUrl || !settings.apiKey) throw new Error('GHL settings not configured');
+      const resp = await fetch(`${settings.proxyUrl}/ghl${endpoint}`, {
+        method,
+        headers: { 'Content-Type': 'application/json', 'X-GHL-API-Key': settings.apiKey, 'X-GHL-Location': settings.locationId },
+        body: body ? JSON.stringify(body) : undefined
+      });
+      if (!resp.ok) { const text = await resp.text(); throw new Error(`GHL API ${resp.status}: ${text}`); }
+      return resp.json();
+    }
+
+    async function testGHLConnection() {
+      saveGHLSettings();
+      showGHLStatus('Testing connection...', 'var(--yellow)');
+      try {
+        const data = await ghlRequest('GET', `/contacts/?locationId=${getGHLSettings().locationId}&limit=1`);
+        showGHLStatus(`Connected! Found ${data.meta?.total || '?'} existing contacts.`, 'var(--green)');
+      } catch (e) { showGHLStatus(`Failed: ${e.message}`, 'var(--red)'); }
+    }
+
+    async function loadGHLPipelines() {
+      saveGHLSettings();
+      showGHLStatus('Loading pipelines...', 'var(--yellow)');
+      try {
+        const data = await ghlRequest('GET', `/opportunities/pipelines?locationId=${getGHLSettings().locationId}`);
+        ghlPipelines = data.pipelines || [];
+        if (ghlPipelines.length === 0) { showGHLStatus('No pipelines found.', 'var(--orange)'); return; }
+        const sel = document.getElementById('ghl-pipeline');
+        const saved = getGHLSettings().pipelineId;
+        sel.innerHTML = '<option value="">-- Select Pipeline --</option>' + ghlPipelines.map(p => `<option value="${p.id}" ${p.id === saved ? 'selected' : ''}>${escHtml(p.name)}</option>`).join('');
+        if (ghlPipelines.length === 1) { sel.value = ghlPipelines[0].id; onPipelineSelect(); }
+        else if (saved) { sel.value = saved; onPipelineSelect(); }
+        showGHLStatus(`Found ${ghlPipelines.length} pipeline(s).`, 'var(--green)');
+      } catch (e) { showGHLStatus(`Failed: ${e.message}`, 'var(--red)'); }
+    }
+
+    function onPipelineSelect() {
+      if (!document.getElementById('ghl-pipeline').value) { document.getElementById('ghl-stage-mapping').style.display = 'none'; return; }
+      renderStageMapping();
+    }
+
+    function renderStageMapping() {
+      const pipeline = ghlPipelines.find(p => p.id === document.getElementById('ghl-pipeline').value);
+      if (!pipeline) return;
+      const stages = pipeline.stages || [];
+      const saved = getGHLSettings().statusToStageMap || {};
+      const statuses = [
+        { key: 'contacted', label: 'Contacted' }, { key: 'follow_up', label: 'Follow Up' },
+        { key: 'closed', label: 'Closed / Won' }, { key: 'not_interested', label: 'Not Interested' }
+      ];
+
+      document.getElementById('ghl-stage-map-rows').innerHTML = statuses.map(s => {
+        let matched = saved[s.key] || '';
+        if (!matched) {
+          const fuzzy = stages.find(st =>
+            st.name.toLowerCase().includes(s.key.replace('_', ' ')) ||
+            (s.key === 'closed' && (st.name.toLowerCase().includes('won') || st.name.toLowerCase().includes('close'))) ||
+            (s.key === 'not_interested' && (st.name.toLowerCase().includes('lost') || st.name.toLowerCase().includes('not interested'))) ||
+            (s.key === 'follow_up' && st.name.toLowerCase().includes('follow'))
+          );
+          if (fuzzy) matched = fuzzy.id;
+        }
+        return `<div class="stage-map-row">
+          <span class="status-label" style="color:${MARKER_COLORS[s.key] || 'var(--text-primary)'}">${s.label}</span>
+          <span style="color:var(--text-secondary);">&rarr;</span>
+          <select data-status="${s.key}"><option value="">-- Skip --</option>
+            ${stages.map(st => `<option value="${st.id}" ${st.id === matched ? 'selected' : ''}>${escHtml(st.name)}</option>`).join('')}
+          </select></div>`;
+      }).join('');
+
+      document.getElementById('ghl-stage-mapping').style.display = 'block';
+    }
+
+    // ─── GHL Sync ──────────────────────────────────────────
+    const ACTIVE_LEAD_STATUSES = ['contacted', 'follow_up', 'closed'];
+
+    async function syncToGHL(contractorId, oldStatus) {
+      const c = contractors[contractorId];
+      if (!c) return;
+      const settings = getGHLSettings();
+      if (!settings.pipelineId || !settings.statusToStageMap) return;
+
+      const isActiveLead = ACTIVE_LEAD_STATUSES.includes(c.status);
+      const isLost = c.status === 'not_interested';
+      const stageId = settings.statusToStageMap[c.status];
+      if (!isActiveLead && !isLost) return;
+      if (!stageId && !isLost) return;
+
+      try {
+        if (!c.ghlContactId) {
+          const result = await ghlRequest('POST', '/contacts/', {
+            locationId: settings.locationId, companyName: c.name,
+            phone: c.phone || undefined, email: c.contactEmail || undefined,
+            address1: c.address || undefined, website: c.website || undefined,
+            source: 'Contractor Map', tags: ['contractor-map', `trade-${c.trade.toLowerCase().replace(/\s+/g, '-')}`, `status-${c.status}`]
+          });
+          if (result.contact?.id) c.ghlContactId = result.contact.id;
+          else throw new Error('Failed to create contact');
+        }
+
+        const oppStatus = c.status === 'closed' ? 'won' : c.status === 'not_interested' ? 'lost' : 'open';
+
+        if (c.ghlOpportunityId) {
+          const updateData = { status: oppStatus };
+          if (stageId) updateData.pipelineStageId = stageId;
+          await ghlRequest('PUT', `/opportunities/${c.ghlOpportunityId}`, updateData);
+          showToast(`${c.name} → ${STATUS_LABELS[c.status]} (updated in GHL)`, 'info');
+        } else if (isActiveLead) {
+          const result = await ghlRequest('POST', '/opportunities/', {
+            pipelineId: settings.pipelineId, locationId: settings.locationId,
+            name: c.name, pipelineStageId: stageId, status: oppStatus, contactId: c.ghlContactId
+          });
+          if (result.opportunity?.id) {
+            c.ghlOpportunityId = result.opportunity.id;
+            showToast(`${c.name} → New opportunity created in GHL!`, 'info');
+          }
+        }
+
+        await ghlRequest('PUT', `/contacts/${c.ghlContactId}`, {
+          tags: ['contractor-map', `trade-${c.trade.toLowerCase().replace(/\s+/g, '-')}`, `status-${c.status}`]
+        }).catch(() => {});
+
+        saveToStorage();
+      } catch (e) {
+        console.warn(`GHL sync failed for ${c.name}:`, e);
+        showToast(`GHL sync failed for ${c.name}: ${e.message}`, 'error');
+      }
+    }
+
+    async function pushToGHL() {
+      saveGHLSettings();
+      const settings = getGHLSettings();
+      if (!settings.proxyUrl || !settings.apiKey || !settings.locationId) { showGHLStatus('Fill in all settings first.', 'var(--red)'); return; }
+
+      const list = Object.values(contractors).filter(c => activeRegion === 'all' || c.region === activeRegion);
+      const hasOpps = !!settings.pipelineId;
+      if (!confirm(`Push ${list.length} contractors to GHL?${hasOpps ? '\n\nContacts: ALL\nOpportunities: Active leads only' : ''}`)) return;
+
+      showGHLStatus(`Pushing 0/${list.length}...`, 'var(--yellow)');
+      let cc = 0, cu = 0, oc = 0, ou = 0, errors = 0;
+
+      for (let i = 0; i < list.length; i++) {
+        const c = list[i];
+        try {
+          const contactData = {
+            locationId: settings.locationId, companyName: c.name,
+            phone: c.phone || undefined, email: c.contactEmail || undefined,
+            address1: c.address || undefined, website: c.website || undefined,
+            source: 'Contractor Map',
+            tags: [`status-${c.status}`, `trade-${c.trade.toLowerCase().replace(/\s+/g, '-')}`, `region-${c.region}`, 'contractor-map']
+          };
+
+          if (c.ghlContactId) { await ghlRequest('PUT', `/contacts/${c.ghlContactId}`, contactData); cu++; }
+          else {
+            const result = await ghlRequest('POST', '/contacts/', contactData);
+            if (result.contact?.id) { c.ghlContactId = result.contact.id; cc++; }
+          }
+
+          if (hasOpps && c.ghlContactId) {
+            const isActive = ACTIVE_LEAD_STATUSES.includes(c.status);
+            const isLost = c.status === 'not_interested';
+            const stageId = (settings.statusToStageMap || {})[c.status];
+            if ((isActive || isLost) && stageId) {
+              const oppStatus = c.status === 'closed' ? 'won' : c.status === 'not_interested' ? 'lost' : 'open';
+              if (c.ghlOpportunityId) { await ghlRequest('PUT', `/opportunities/${c.ghlOpportunityId}`, { status: oppStatus, pipelineStageId: stageId }); ou++; }
+              else if (isActive) {
+                const r = await ghlRequest('POST', '/opportunities/', { pipelineId: settings.pipelineId, locationId: settings.locationId, name: c.name, pipelineStageId: stageId, status: oppStatus, contactId: c.ghlContactId });
+                if (r.opportunity?.id) { c.ghlOpportunityId = r.opportunity.id; oc++; }
+              }
+            }
+          }
+        } catch (e) { errors++; }
+
+        showGHLStatus(`${i + 1}/${list.length}... Contacts: ${cc} new, ${cu} updated${hasOpps ? ` | Opps: ${oc} new, ${ou} updated` : ''} | ${errors} errors`, 'var(--yellow)');
+        await new Promise(r => setTimeout(r, 150));
+        if (i % 20 === 0) saveToStorage();
+      }
+
+      saveToStorage();
+      showGHLStatus(`Done! Contacts: ${cc} created, ${cu} updated${hasOpps ? ` | Opps: ${oc} created, ${ou} updated` : ''} | ${errors} errors`, errors > 0 ? 'var(--orange)' : 'var(--green)');
+    }
+
+    // ─── Keyboard shortcut ─────────────────────────────────
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { closeModal(); closeImportModal(); closeGHLModal(); }
+    });
+
+    // ─── Boot ──────────────────────────────────────────────
+    init();
+  </script>
+</body>
+</html>
