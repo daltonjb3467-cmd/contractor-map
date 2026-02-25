@@ -568,37 +568,20 @@
 
     const REGIONS = {
       nj: {
-        label: 'New Jersey',
-        center: { lat: 40.0583, lng: -74.4057 },
-        zoom: 8,
-        bounds: { north: 41.3574, south: 38.9285, east: -73.8938, west: -75.5634 },
-        radius: 30000,
+        label: 'Central NJ (50mi from Freehold)',
+        center: { lat: 40.2598, lng: -74.2737 },  // Freehold
+        zoom: 10,
+        bounds: { north: 40.85, south: 39.65, east: -73.75, west: -74.95 },
+        radius: 20000,
         areas: [
-          { lat: 41.0534, lng: -74.7311 },  // Sussex / Vernon
-          { lat: 41.0470, lng: -74.1310 },  // West Milford
-          { lat: 40.8568, lng: -74.2263 },  // Paterson
-          { lat: 40.8839, lng: -74.0430 },  // Hackensack
-          { lat: 40.7282, lng: -74.0776 },  // Newark
-          { lat: 40.7580, lng: -74.2340 },  // Livingston
-          { lat: 40.8645, lng: -74.4015 },  // Parsippany
-          { lat: 40.6340, lng: -74.4057 },  // Bridgewater
-          { lat: 40.4774, lng: -74.2591 },  // Middlesex
-          { lat: 40.3573, lng: -74.6672 },  // Princeton
-          { lat: 40.2206, lng: -74.7597 },  // Trenton
-          { lat: 40.5890, lng: -74.6155 },  // Flemington
-          { lat: 40.6637, lng: -74.6930 },  // Warren
-          { lat: 40.0583, lng: -74.1357 },  // Monmouth
-          { lat: 40.2171, lng: -74.0124 },  // Asbury Park
-          { lat: 39.9242, lng: -74.1773 },  // Toms River
-          { lat: 39.7560, lng: -74.2090 },  // Manahawkin
-          { lat: 39.9526, lng: -75.1652 },  // Camden
-          { lat: 39.8560, lng: -74.9300 },  // Cherry Hill
-          { lat: 39.7092, lng: -74.9646 },  // Burlington
-          { lat: 39.4220, lng: -75.2320 },  // Salem
-          { lat: 39.4817, lng: -75.0260 },  // Vineland
-          { lat: 39.3643, lng: -74.4229 },  // Atlantic City
-          { lat: 39.2904, lng: -74.5720 },  // Egg Harbor
-          { lat: 38.9351, lng: -74.9060 },  // Cape May
+          { lat: 40.2598, lng: -74.2737 },  // Freehold (center)
+          { lat: 40.4774, lng: -74.2591 },  // New Brunswick / Middlesex
+          { lat: 40.3573, lng: -74.6672 },  // Princeton / Mercer
+          { lat: 40.5862, lng: -74.4057 },  // Bridgewater / Somerset
+          { lat: 40.0583, lng: -74.1357 },  // Howell / Monmouth south
+          { lat: 40.2171, lng: -74.0124 },  // Asbury Park / Shore
+          { lat: 39.9530, lng: -74.1780 },  // Toms River / Ocean
+          { lat: 40.4862, lng: -74.4518 },  // Edison / Piscataway
         ]
       },
       fl: {
@@ -625,6 +608,8 @@
     };
 
     // Search configs — types and keywords for contractor discovery
+    // One search per trade to keep total queries manageable
+    // 8 areas × 18 configs = 144 searches (vs 625 before)
     const SEARCH_CONFIGS = [
       { type: 'general_contractor', trade: 'General' },
       { type: 'roofing_contractor', trade: 'Roofing' },
@@ -632,24 +617,17 @@
       { type: 'plumber', trade: 'Plumbing' },
       { type: 'painter', trade: 'Painting' },
       { keyword: 'pool contractor', trade: 'Pool' },
-      { keyword: 'pool company', trade: 'Pool' },
       { keyword: 'fencing contractor', trade: 'Fencing' },
-      { keyword: 'fence company', trade: 'Fencing' },
       { keyword: 'landscaping company', trade: 'Landscaping' },
-      { keyword: 'landscaper', trade: 'Landscaping' },
       { keyword: 'HVAC contractor', trade: 'HVAC' },
-      { keyword: 'HVAC company', trade: 'HVAC' },
       { keyword: 'pressure washing', trade: 'Pressure Washing' },
       { keyword: 'paving contractor', trade: 'Paving' },
       { keyword: 'concrete contractor', trade: 'Concrete' },
       { keyword: 'deck builder', trade: 'Decks' },
-      { keyword: 'deck contractor', trade: 'Decks' },
       { keyword: 'hardscaping', trade: 'Hardscaping' },
       { keyword: 'gutter company', trade: 'Gutters' },
-      { keyword: 'gutter installation', trade: 'Gutters' },
       { keyword: 'siding contractor', trade: 'Siding' },
       { keyword: 'tree service', trade: 'Tree Service' },
-      { keyword: 'tree removal', trade: 'Tree Service' },
       { keyword: 'garage door company', trade: 'Garage Door' },
     ];
 
