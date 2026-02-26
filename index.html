@@ -381,6 +381,7 @@
             <option value="Siding">Siding</option>
             <option value="Tree Service">Tree Service</option>
             <option value="Garage Door">Garage Door</option>
+            <option value="Epoxy Flooring">Epoxy Flooring</option>
             <option value="Other">Other</option>
           </select>
           <select id="contact-filter" onchange="filterList()">
@@ -629,6 +630,7 @@
       { keyword: 'siding contractor', trade: 'Siding' },
       { keyword: 'tree service', trade: 'Tree Service' },
       { keyword: 'garage door company', trade: 'Garage Door' },
+      { keyword: 'epoxy floor coating', trade: 'Epoxy Flooring' },
     ];
 
     const STATUS_LABELS = {
@@ -947,6 +949,7 @@
         'Siding': ['siding', 'vinyl'],
         'Tree Service': ['tree service', 'tree removal', 'arborist', 'tree care'],
         'Garage Door': ['garage door'],
+        'Epoxy Flooring': ['epoxy', 'floor coating', 'garage floor'],
       };
 
       for (const [trade, keywords] of Object.entries(tradeKeywords)) {
